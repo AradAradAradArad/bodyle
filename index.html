@@ -9,8 +9,15 @@
 <body>
     <div class="container">
         <header>
-            <h1>Body Guess</h1>
-            <button id="howToPlayBtn" class="icon-btn" aria-label="How to Play">?</button>
+            <div class="header-left">
+                <h1 id="appTitle">Body Guess</h1>
+            </div>
+            <div class="header-right">
+                <button id="languageSwitch" class="language-btn" aria-label="Switch Language">
+                    <span id="langText">EN</span>
+                </button>
+                <button id="howToPlayBtn" class="icon-btn" aria-label="How to Play">?</button>
+            </div>
         </header>
 
         <div class="game-info">
@@ -118,6 +125,8 @@
 
     <script src="anatomy-data.js"></script>
     <script src="body-anatomy.js"></script>
+    <script src="realistic-body.js"></script>
+    <script src="translations.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

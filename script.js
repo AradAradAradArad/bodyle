@@ -150,23 +150,23 @@ function findShortestPath(start, end) {
 // Handle guess submission
 function submitGuess() {
     if (!gameState.gameStarted) {
-        showMessage('אנא בחר נקודת התחלה תחילה', 'error');
+        showMessage(typeof t !== 'undefined' ? t('selectStartFirst') : 'אנא בחר נקודת התחלה תחילה', 'error');
         return;
     }
     
     if (gameState.gameWon) {
-        showMessage('כבר ניצחת! התחל משחק חדש', 'info');
+        showMessage(typeof t !== 'undefined' ? t('alreadyWon') : 'כבר ניצחת! התחל משחק חדש', 'info');
         return;
     }
     
     if (gameState.guesses.length >= gameState.maxGuesses) {
-        showMessage('סיימת את כל הניחושים!', 'error');
+        showMessage(typeof t !== 'undefined' ? t('noMoreGuesses') : 'סיימת את כל הניחושים!', 'error');
         return;
     }
     
     const guess = guessInput.value.trim();
     if (!guess) {
-        showMessage('אנא הכנס ניחוש', 'error');
+        showMessage(typeof t !== 'undefined' ? t('enterGuess') : 'אנא הכנס ניחוש', 'error');
         return;
     }
     
@@ -177,22 +177,17 @@ function submitGuess() {
     const validStructure = findBestMatch(guess, structures);
     
     if (!validStructure) {
-        showMessage(`"${guess}" לא נמצא ברשימת המבנים. נסה שוב עם שם מדויק יותר.`, 'error');
+        const msg = typeof t !== 'undefined' 
+            ? `"${guess}" ${t('notFound')}. ${t('tryAgain')}` 
+            : `"${guess}" לא נמצא ברשימת המבנים. נסה שוב עם שם מדויק יותר.`;
+        showMessage(msg, 'error');
         guessInput.value = '';
         return;
     }
     
-    // If the guess is close but not exact, show a helpful message but accept it anyway
-    const normalizedGuess = normalizeString(guess);
-    const normalizedStructure = normalizeString(validStructure);
-    if (normalizedGuess !== normalizedStructure) {
-        // Show info message but continue with the guess
-        // The message will be replaced by the result message below
-    }
-    
     // Check if already guessed
     if (gameState.guesses.includes(validStructure)) {
-        showMessage('כבר ניחשת את זה!', 'error');
+        showMessage(typeof t !== 'undefined' ? t('alreadyGuessed') : 'כבר ניחשת את זה!', 'error');
         guessInput.value = '';
         return;
     }
@@ -206,11 +201,20 @@ function submitGuess() {
     
     if (isCorrect) {
         gameState.gameWon = true;
-        showMessage(`🎉 ניצחת! הגעת ליעד ב-${gameState.guesses.length} ניחושים!`, 'success');
+        const msg = typeof t !== 'undefined'
+            ? `🎉 ${t('won')} ${gameState.guesses.length} ${t('guesses')}`
+            : `🎉 ניצחת! הגעת ליעד ב-${gameState.guesses.length} ניחושים!`;
+        showMessage(msg, 'success');
     } else if (isOnPath) {
-        showMessage(`✓ "${validStructure}" נמצא במסלול!`, 'info');
+        const msg = typeof t !== 'undefined'
+            ? `✓ "${validStructure}" ${t('onPath')}`
+            : `✓ "${validStructure}" נמצא במסלול!`;
+        showMessage(msg, 'info');
     } else {
-        showMessage(`✗ "${validStructure}" לא נמצא במסלול`, 'error');
+        const msg = typeof t !== 'undefined'
+            ? `✗ "${validStructure}" ${t('notOnPath')}`
+            : `✗ "${validStructure}" לא נמצא במסלול`;
+        showMessage(msg, 'error');
     }
     
     guessInput.value = '';
@@ -218,7 +222,8 @@ function submitGuess() {
     
     // Check if lost
     if (!gameState.gameWon && gameState.guesses.length >= gameState.maxGuesses) {
-        showMessage(`הפסדת! המסלול המלא מוצג במפה למטה.`, 'error');
+        const msg = typeof t !== 'undefined' ? t('lost') : 'הפסדת! המסלול המלא מוצג במפה למטה.';
+        showMessage(msg, 'error');
         updateUI(); // Update to show full path
     }
 }
@@ -231,6 +236,12 @@ function normalizeString(str) {
         .replace(/[^\u0590-\u05FFa-zA-Z0-9]/g, '') // Remove special characters
         .toLowerCase()
         .trim();
+}
+
+// Extract English name from structure (inside parentheses)
+function getEnglishName(structure) {
+    const match = structure.match(/\(([^)]+)\)/);
+    return match ? match[1].trim() : '';
 }
 
 // Find best matching structure using fuzzy matching
@@ -250,11 +261,33 @@ function findBestMatch(guess, structures) {
     });
     if (hebrewMatch) return hebrewMatch;
     
+    // Try matching English name only (inside parentheses or standalone)
+    const englishOnly = guess.includes('(') ? guess.match(/\(([^)]+)\)/)?.[1]?.trim() : guess;
+    if (englishOnly) {
+        const normalizedEnglish = normalizeString(englishOnly);
+        let englishMatch = structures.find(s => {
+            const sEnglish = getEnglishName(s);
+            return sEnglish && normalizeString(sEnglish) === normalizedEnglish;
+        });
+        if (englishMatch) return englishMatch;
+        
+        // Try partial English match
+        let partialEnglishMatch = structures.find(s => {
+            const sEnglish = getEnglishName(s);
+            if (!sEnglish) return false;
+            const normalizedSEnglish = normalizeString(sEnglish);
+            return normalizedSEnglish.includes(normalizedEnglish) || 
+                   normalizedEnglish.includes(normalizedSEnglish);
+        });
+        if (partialEnglishMatch) return partialEnglishMatch;
+    }
+    
     // Try partial match - check if guess is contained in structure name or vice versa
     // This is more lenient - accepts if one contains the other
     let partialMatch = structures.find(s => {
         const normalizedS = normalizeString(s);
         const sHebrew = normalizeString(s.split('(')[0].trim());
+        const sEnglish = normalizeString(getEnglishName(s));
         const guessHebrew = normalizedHebrew;
         
         // Check if one contains the other (at least 3 characters for meaningful match)
@@ -265,6 +298,12 @@ function findBestMatch(guess, structures) {
         }
         if (guessHebrew.length >= 3 && sHebrew.length >= 3) {
             if (sHebrew.includes(guessHebrew) || guessHebrew.includes(sHebrew)) {
+                return true;
+            }
+        }
+        if (englishOnly && sEnglish && englishOnly.length >= 3 && sEnglish.length >= 3) {
+            const normalizedEnglish = normalizeString(englishOnly);
+            if (sEnglish.includes(normalizedEnglish) || normalizedEnglish.includes(sEnglish)) {
                 return true;
             }
         }
@@ -356,7 +395,8 @@ function updateUI() {
     }
     
     // Update guess button
-    guessBtn.textContent = `נחש (${gameState.guesses.length}/${gameState.maxGuesses})`;
+    const guessBtnText = typeof t !== 'undefined' ? t('guessButton') : 'נחש';
+    guessBtn.textContent = `${guessBtnText} (${gameState.guesses.length}/${gameState.maxGuesses})`;
     guessBtn.disabled = !gameState.gameStarted || gameState.gameWon || gameState.guesses.length >= gameState.maxGuesses;
     
     // Update guesses list
@@ -504,56 +544,10 @@ function drawBodyMap() {
     const svg = document.getElementById('bodySvg');
     svg.innerHTML = '';
     
-    // Draw body outline
-    const outline = bodyAnatomy.bodyOutline;
-    
-    // Head
-    const head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    head.setAttribute('d', outline.head);
-    head.setAttribute('fill', '#2a2a2a');
-    head.setAttribute('stroke', '#555');
-    head.setAttribute('stroke-width', '2');
-    svg.appendChild(head);
-    
-    // Torso
-    const torso = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    torso.setAttribute('d', outline.torso);
-    torso.setAttribute('fill', '#2a2a2a');
-    torso.setAttribute('stroke', '#555');
-    torso.setAttribute('stroke-width', '2');
-    svg.appendChild(torso);
-    
-    // Left arm
-    const leftArm = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    leftArm.setAttribute('d', outline.leftArm);
-    leftArm.setAttribute('fill', 'none');
-    leftArm.setAttribute('stroke', '#555');
-    leftArm.setAttribute('stroke-width', '2');
-    svg.appendChild(leftArm);
-    
-    // Right arm
-    const rightArm = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    rightArm.setAttribute('d', outline.rightArm);
-    rightArm.setAttribute('fill', 'none');
-    rightArm.setAttribute('stroke', '#555');
-    rightArm.setAttribute('stroke-width', '2');
-    svg.appendChild(rightArm);
-    
-    // Left leg
-    const leftLeg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    leftLeg.setAttribute('d', outline.leftLeg);
-    leftLeg.setAttribute('fill', 'none');
-    leftLeg.setAttribute('stroke', '#555');
-    leftLeg.setAttribute('stroke-width', '2');
-    svg.appendChild(leftLeg);
-    
-    // Right leg
-    const rightLeg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    rightLeg.setAttribute('d', outline.rightLeg);
-    rightLeg.setAttribute('fill', 'none');
-    rightLeg.setAttribute('stroke', '#555');
-    rightLeg.setAttribute('stroke-width', '2');
-    svg.appendChild(rightLeg);
+    // Draw realistic body using the new function
+    if (typeof createRealisticBody === 'function') {
+        createRealisticBody(svg);
+    }
     
     if (!gameState.gameStarted || !gameState.path.length) {
         // Add watermark
@@ -674,6 +668,14 @@ function setupEventListeners() {
     hintNext.addEventListener('click', showNextHint);
     hintAll.addEventListener('click', showAllHints);
     hintInitials.addEventListener('click', showInitialsHint);
+    
+    // Language switch
+    const languageSwitch = document.getElementById('languageSwitch');
+    if (languageSwitch) {
+        languageSwitch.addEventListener('click', () => {
+            switchLanguage();
+        });
+    }
     
     // Close modal on outside click
     howToPlayModal.addEventListener('click', (e) => {
