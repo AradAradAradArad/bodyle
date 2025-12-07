@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Body Guess - משחק אנטומיה</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Body Guess</h1>
+            <button id="howToPlayBtn" class="icon-btn" aria-label="How to Play">?</button>
+        </header>
+
+        <div class="game-info">
+            <p id="gameObjective">
+                היום אני רוצה לטייל מ-<span id="startPoint" class="start-color">?</span> 
+                ל-<span id="endPoint" class="end-color">?</span>
+            </p>
+        </div>
+
+        <div class="difficulty-selector">
+            <label>רמת קושי:</label>
+            <select id="difficultySelect">
+                <option value="bones">עצמות (קל)</option>
+                <option value="organs">איברים (קל)</option>
+                <option value="muscles">שרירים (בינוני)</option>
+                <option value="vessels">כלי דם (קשה)</option>
+                <option value="nerves">עצבים (קשה)</option>
+            </select>
+        </div>
+
+        <div class="start-point-selector">
+            <label>בחר נקודת התחלה:</label>
+            <select id="startPointSelect">
+                <option value="">-- בחר נקודת התחלה --</option>
+            </select>
+        </div>
+
+        <div class="map-container">
+            <div id="bodyMap" class="body-map">
+                <svg id="bodySvg" viewBox="0 0 400 600">
+                    <!-- Body outline and structures will be drawn here -->
+                </svg>
+            </div>
+        </div>
+
+        <div class="game-controls">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="guessInput" 
+                    placeholder="הכנס שם של מבנה אנטומי..."
+                    autocomplete="off"
+                >
+                <button id="guessBtn" class="guess-button">נחש (0/7)</button>
+            </div>
+            
+            <div class="past-guesses">
+                <button id="toggleGuesses" class="toggle-btn">
+                    ניחושים קודמים (לחץ להצגה/הסתרה):
+                </button>
+                <div id="guessesList" class="guesses-list hidden"></div>
+            </div>
+
+            <div class="hints-section">
+                <p>קבל רמז (0/3):</p>
+                <button id="hintNext" class="hint-btn">הצג את המבנה הבא</button>
+                <button id="hintAll" class="hint-btn">הצג את כל המבנים</button>
+                <button id="hintInitials" class="hint-btn">הצג ראשי תיבות</button>
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <!-- How to Play Modal -->
+    <div id="howToPlayModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>? איך לשחק</h2>
+                <button id="closeModal" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="game-visual">
+                    <div class="visual-grid">
+                        <div class="hex start-hex"></div>
+                        <div class="hex end-hex"></div>
+                    </div>
+                    <div class="visual-label">body guess</div>
+                    <input type="text" placeholder="הכנס מבנה אנטומי..." class="visual-input" disabled>
+                </div>
+                <p class="instructions">
+                    תן שמות למבנים אנטומיים כדי לטייל מ-<span class="start-color">נקודת ההתחלה</span> 
+                    ל-<span class="end-color">נקודת הסיום</span>. נסה להגיע במינימום ניחושים!
+                </p>
+                <div class="info-sections">
+                    <div class="info-section">
+                        <span class="info-icon">📊</span>
+                        <span class="info-title">ניקוד</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="info-section">
+                        <span class="info-icon">🔗</span>
+                        <span class="info-title">חיבורים</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                    <div class="info-section">
+                        <span class="info-icon">🙏</span>
+                        <span class="info-title">קרדיטים</span>
+                        <span class="chevron">▼</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="anatomy-data.js"></script>
+    <script src="body-anatomy.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
